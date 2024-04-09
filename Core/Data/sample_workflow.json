@@ -1,0 +1,95 @@
+[
+  {
+    "WorkflowName": "Sample with unnamed input",
+    "Rules": [
+      {
+        "RuleName": "ErrorInRange",
+        "ErrorMessage": "Value not valid in range > 30 and < 60",
+        "Enabled": true,
+        "ErrorType": 1,
+        "RuleExpressionType": 0,
+        "Expression": "input1.val <= 30 or input1.val >= 60",
+        "SuccessEvent": "OK",
+        "Actions": {
+          "OnSuccess": {
+            "Name": "OutputExpression", //Name of action you want to call
+            "Context": { //This is passed to the action as action context
+              "Expression": "input1.val * 0.9"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "WorkflowName": "Sample with named",
+    "Rules": [
+      {
+        "RuleName": "TemperatureCheck",
+        "ErrorMessage": "Min temperature must be > 25 and Max temperature must be < 55",
+        "Enabled": true,
+        "ErrorType": 1,
+        "RuleExpressionType": 0,
+        "Expression": "sensor.minValue <= 25  or sensor.maxValue >= 55",
+        "SuccessEvent": "ConveyorMainMotorTemperature outside of defined limit"
+      }
+    ]
+  },
+  {
+    "WorkflowName": "TaskType_1.OnInit",
+    "Rules": [
+      {
+        "RuleName": "status",
+        "ErrorMessage": "{status: \"Edit\", validate: \"status.controlloCambioStato\"}",
+        "Operator": "OrElse",
+        "Rules": [
+          {
+            "RuleName": "InCreazione",
+            "Expression": "user.group == \"CapoRepartoUT\" AND item.status == \"WorkTaskStatus_1\"",
+            "ErrorMessage": "{status: \"ReadOnly\", message: \"Solo DC puo' confermare la richiesta\"}",
+            "SuccessEvent": "{status: \"Edit\", validate: \"status.ConfermaClienteAmmessa\"}"
+          },
+          {
+            "RuleName": "InApprovazione",
+            "Expression": "user.group == \"CapoRepartoUT\" AND item.status == \"WorkTaskStatus_2\"",
+            "ErrorMessage": "{status: \"ReadOnly\", message: \"Solo il capo reparto puo' Approvare/Rifiutare la trattativa\"}",
+            "SuccessEvent": "{status: \"Edit\", validate: \"status.ConfermaClienteAmmessa\"}"
+          },
+          {
+            "RuleName": "Default",
+            "Expression": "true == true",
+            "SuccessEvent": "{status: \"Edit\", validate: \"status.controlloCambioStato\"}"
+          }
+        ]
+      },
+      {
+        "RuleName": "assignee",
+        "Operator": "OrElse",
+        "ErrorMessage": "{status: \"ReadOnly\", message: \"Solo AM puo' cambiare il responsabile\"}",
+        "Rules": [
+          {
+            "RuleName": "SoloAMAssegna",
+            "Expression": "user.group == \"AM\"",
+            "SuccessEvent": "{status: \"Edit\", validate: \"assignee.ConfermaClienteAmmessa\"}"
+          },
+          {
+            "RuleName": "NonAM",
+            "Expression": "user.group != \"AM\"",
+            "SuccessEvent": "{status: \"ReadOnly\"}"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "WorkflowName": "TaskType_1.Validate",
+    "Rules": [
+      {
+        "RuleName": "assignee.ConfermaClienteAmmessa",
+        "Expression": "input.valore == \"AMMESSO\"",
+        "ErrorMessage": "{status: \"KO\", message: \"Solo il valore AMMESSO sblocca\"}",
+        "SuccessEvent": "{status: \"OK\"}"
+      }
+    ]
+  }
+]
